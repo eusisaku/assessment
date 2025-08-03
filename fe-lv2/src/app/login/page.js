@@ -1,11 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function LoginPage() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const [success, setSuccess] = useState(false)
+    const [connected, setConnected] = useState(null)
+    const [message, setMessage] = useState('')
+
+    useEffect(() => {
+        fetch('/api/ping')
+            .then((res) => res.json())
+            .then((data) => setConnected(data.status === 'connected'))
+            .catch(() => setConnected(false))
+    }, [])
 
     const handleLogin = async (e) => {
         e.preventDefault()
@@ -14,40 +21,21 @@ export default function LoginPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
         })
-
         const data = await res.json()
-        if (data.success) {
-            setSuccess(true)
-        } else {
-            setError(data.message || 'Login gagal')
-        }
+        setMessage(data.success ? 'Login sukses ✔️' : data.message)
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <form onSubmit={handleLogin} className="bg-white p-6 rounded shadow-md w-full max-w-sm space-y-4">
-                <h2 className="text-2xl font-bold">Login</h2>
-
-                {error && <div className="text-red-500">{error}</div>}
-                {success && <div className="text-green-500">Login berhasil 🎉</div>}
-
-                <input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full p-2 border rounded"
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-2 border rounded"
-                />
-                <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
-                    Login
-                </button>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <form onSubmit={handleLogin} className="bg-white p-6 rounded shadow w-full max-w-sm space-y-4">
+                <h2 className="text-xl font-bold text-center">Login</h2>
+                <p className={connected ? 'text-green-500' : 'text-red-500'}>
+                    DB: {connected === null ? 'Cek...' : connected ? 'Tersambung' : 'Gagal'}
+                </p>
+                {message && <div className="text-blue-500">{message}</div>}
+                <input className="w-full border p-2 rounded" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+                <input className="w-full border p-2 rounded" placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+                <button type="submit" className="bg-blue-600 text-white p-2 rounded w-full">Login</button>
             </form>
         </div>
     )

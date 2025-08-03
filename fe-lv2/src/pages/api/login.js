@@ -1,19 +1,17 @@
 import { db } from '@/lib/db'
+import { verifyPassword } from '@/lib/hash'
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' })
+    if (req.method !== 'POST') return res.status(405).end()
 
     const { username, password } = req.body
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username])
 
-    try {
-        const [rows] = await db.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password])
+    if (!rows.length) return res.status(401).json({ success: false, message: 'User not found' })
 
-        if (rows.length > 0) {
-            return res.status(200).json({ success: true, user: rows[0] })
-        } else {
-            return res.status(401).json({ success: false, message: 'Invalid credentials' })
-        }
-    } catch (err) {
-        return res.status(500).json({ success: false, error: err.message })
-    }
+    const valid = await verifyPassword(password, rows[0].password)
+    if (!valid) return res.status(401).json({ success: false, message: 'Wrong password' })
+
+    res.setHeader('Set-Cookie', `user=${rows[0].username}; Path=/; HttpOnly`)
+    res.status(200).json({ success: true })
 }
