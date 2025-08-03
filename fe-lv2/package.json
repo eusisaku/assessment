@@ -13,6 +13,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "mysql2": "^3.14.3",
     "next": "15.4.5",
     "react": "19.1.0",
